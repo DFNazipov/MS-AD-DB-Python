@@ -53,4 +53,38 @@ IPv6: none
    ![изображение](https://github.com/user-attachments/assets/b3b995af-db3f-4967-a17e-a8b3d27332ef)
 
 3. Настройка AD DS
-4. 
+
+
+# PostgresSQL
+
+Создаем базу данных, в которую будем вносить данные из AD
+```
+create database database_ad;
+```
+Создаем таблицы Users, Groups, UsersInGroups
+
+```
+CREATE TABLE Users (
+    guid UUID PRIMARY KEY,
+    upn VARCHAR(255),
+    username VARCHAR(255),
+    first_name VARCHAR(50),
+    last_name VARCHAR(50),
+    middle_name VARCHAR(50),
+    last_logon TIMESTAMP
+);
+
+CREATE TABLE Groups (
+    guid UUID PRIMARY KEY,
+    cn VARCHAR(255),
+    group_name VARCHAR(255)
+);
+
+CREATE TABLE UsersInGroups (
+    guid UUID,
+    username VARCHAR(255),
+    group_name VARCHAR(255),
+    PRIMARY KEY (guid, group_name)
+);
+
+```
