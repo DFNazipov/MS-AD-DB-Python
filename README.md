@@ -38,15 +38,22 @@
 
 # Windows Server 2016 (AD)
 OS: Microsoft Windows Server 2016 (with GUI)
+
 Role: Domain Controller
+
 Name PC: DC
+
 Domain: innostage.test.local
+
 IPv4: 192.168.163.24
+
 Mask: 255.255.255.0
+
 Gateway: 192.168.163.1
+
 IPv6: none
 
-Ход работы.
+Ход работы:
 1. Установка ОС Microsoft Windows Server 2016 с поддержкой графического интерфейса
 2. Добавление роли серева AD DS и DNS
 
