@@ -75,7 +75,7 @@ def insert_db(users, groups):
         )
         cursor.execute(users_data, values)
 
-        group_data = f"INSERT INTO {DB_TABLE_2} (guid, cn, name) VALUES " \
+        group_data = f"INSERT INTO {DB_TABLE_2} (guid, cn, group_name) VALUES " \
                      f"(%s, %s, %s) ON CONFLICT (guid) " \
                      f"DO UPDATE SET cn=excluded.cn, name=excluded.name"
     for group in groups:
