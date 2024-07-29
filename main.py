@@ -9,12 +9,12 @@ AD_PASSWORD = "P@ssw0rd"
 AD_BASE_DN = "dc=innostage, dc=test, dc=ru"
 
 DB_HOST = "localhost"
-DB_USER = "username"
-DB_PASSWORD = "password"
+DB_USER = "postgres"
+DB_PASSWORD = "P@ssw0rd"
 DB_NAME = "database_ad"
-DB_TABLE_1 = "users_ad"
-DB_TABLE_2 = "groups_ad"
-DB_TABLE_3 = "useringroup_ad"
+DB_TABLE_1 = "users"
+DB_TABLE_2 = "groups"
+DB_TABLE_3 = "useringroup"
 
 def get_data_ad():
     server = ldap3.Server(AD_SERVER)
@@ -54,8 +54,8 @@ def get_data_ad():
 
 
 def insert_db(users, groups):
-    conn = psycopg2.connect(dbname="db_ad", host="192.168.163.25", user="user",
-                            password="password", port="5432")
+    conn = psycopg2.connect(dbname=DB_HOST, host=DB_HOST, user="DB_USER",
+                            password=DB_PASSWORD, port="5433")
     cursor = conn.cursor()
 
     users_data = f"INSERT INTO {DB_TABLE_1} (guid, upn, username, first_name, last_name, middle_name, last_logon) " \
