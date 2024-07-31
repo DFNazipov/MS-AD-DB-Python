@@ -1,7 +1,4 @@
-from _datetime import datetime
-from typing import List, Dict, Any
 import psycopg2
-import uuid
 import ldap3
 
 AD_IP = "192.168.163.158"
