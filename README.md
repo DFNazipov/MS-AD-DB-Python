@@ -96,3 +96,6 @@ CREATE TABLE usersingroups_ad (
 );
 
 ```
+
+![изображение](https://github.com/user-attachments/assets/43e721c9-0fbd-42fd-af5f-81402d4e7fb3)
+
