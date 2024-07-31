@@ -72,7 +72,7 @@ create database database_ad;
 
 ```
 CREATE TABLE Users (
-    guid UUID PRIMARY KEY,
+    guid_user UUID PRIMARY KEY,
     upn VARCHAR(255),
     username VARCHAR(255),
     first_name VARCHAR(50),
@@ -82,16 +82,20 @@ CREATE TABLE Users (
 );
 
 CREATE TABLE Groups (
-    guid UUID PRIMARY KEY,
+    guid_group UUID PRIMARY KEY,
     cn VARCHAR(255),
     group_name VARCHAR(255)
 );
 
-CREATE TABLE UsersInGroups (
-    guid UUID,
-    username VARCHAR(255),
-    group_name VARCHAR(255),
-    PRIMARY KEY (guid, group_name)
+CREATE TABLE usersingroups_ad (
+    user_guid UUID,
+    group_guid UUID,
+    PRIMARY KEY (user_guid, group_guid),
+    FOREIGN KEY (user_guid) REFERENCES users_ad(guid_user),
+    FOREIGN KEY (group_guid) REFERENCES groups_ad(guid_group)
 );
 
 ```
+
+![изображение](https://github.com/user-attachments/assets/43e721c9-0fbd-42fd-af5f-81402d4e7fb3)
+
