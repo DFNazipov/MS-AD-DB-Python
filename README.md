@@ -56,9 +56,6 @@ IPv6: none
 Ход работы:
 1. Установка ОС Microsoft Windows Server 2016 с поддержкой графического интерфейса
 2. Добавление роли серева AD DS
-
-   ![изображение](https://github.com/user-attachments/assets/b3b995af-db3f-4967-a17e-a8b3d27332ef)
-
 3. Настройка AD DS
 * Задали доменное имя innostage.local
 4. Создание пользователей и групп     
