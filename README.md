@@ -43,23 +43,22 @@ Role: Domain Controller
 
 Name PC: DC
 
-Domain: innostage.test.local
+Domain: innostage.local
 
-IPv4: 192.168.163.24
+IPv4: 192.168.163.158
 
 Mask: 255.255.255.0
 
-Gateway: 192.168.163.1
+Gateway: 192.168.163.2
 
 IPv6: none
 
 Ход работы:
 1. Установка ОС Microsoft Windows Server 2016 с поддержкой графического интерфейса
-2. Добавление роли серева AD DS и DNS
-
-   ![изображение](https://github.com/user-attachments/assets/b3b995af-db3f-4967-a17e-a8b3d27332ef)
-
+2. Добавление роли серева AD DS
 3. Настройка AD DS
+* Задали доменное имя innostage.local
+4. Создание пользователей и групп     
 
 
 # PostgreSQL
@@ -99,3 +98,10 @@ CREATE TABLE usersingroups_ad (
 
 ![изображение](https://github.com/user-attachments/assets/43e721c9-0fbd-42fd-af5f-81402d4e7fb3)
 
+# Script
+
+[Листинг кода](https://github.com/DFNazipov/sender-to-db-from-ad/blob/main/main.py)
+
+# Test drive
+- [x] Атрибуты групп и пользователей отправляются в БД при их создании в AD
+- [x] При изменении атрибутов в AD изменяются данные в БД 
