@@ -1,71 +1,76 @@
-import datetime
+from _datetime import datetime
+from typing import List, Dict, Any
 import psycopg2
 import uuid
 import ldap3
 
-AD_SERVER = "dc.innostage.test.ru"
-AD_USER = "username@dc.innostage.test.ru"
+AD_IP = "192.168.163.158"
+AD_USER = "Администратор@innostage.local"
 AD_PASSWORD = "P@ssw0rd"
-AD_BASE_DN = "dc=innostage, dc=test, dc=ru"
+AD_BASE_DN = "dc=innostage,dc=local"
+
 
 DB_HOST = "localhost"
 DB_USER = "postgres"
 DB_PASSWORD = "P@ssw0rd"
 DB_NAME = "database_ad"
-DB_TABLE_1 = "users"
-DB_TABLE_2 = "groups"
-DB_TABLE_3 = "useringroup"
+DB_TABLE_1 = "users_ad"
+DB_TABLE_2 = "groups_ad"
+DB_TABLE_3 = "usersingroups_ad"
 
-def get_data_ad():
-    server = ldap3.Server(AD_SERVER)
-    connection = ldap3.Connection(server, user=AD_USER, password=AD_PASSWORD)
-    connection.bind()
-    filter_search = "(&((objectClass=user))"
-    attributes = ['objectGUID', 'userPrincipalName', 'sAMAccountName', 'givenName', 'sn', 'middleName', 'lastLogon', 'memberOf']
-    connection.search = (AD_BASE_DN, filter_search, attributes)
-
-    users = []
-    groups = []
-    for entry in connection.entries:
-        if 'objectGUID' in entry:
-            if 'sAMAccountName' in entry:
-                user = {
-                    'guid': str(uuid.UUID(bytes=entry.objectGUID.value)),
-                    'upn': entry.userPrincipalName.value,
-                    'username': entry.sAMAccountName.value,
-                    'first_name': entry.givenName.value,
-                    'last_name': entry.sn.value,
-                    'middle_name': entry.middleName.value,
-                    'last_logon': None if entry.lastLogon is None else datetime.fromtimestamp(
-                        int(entry.lastLogon.value) / 10 ** 6),
-                    'groups': [g.split(',')[0].split('=')[1] for g in entry.memberOf.values]
-                }
-                users.append(user)
-            else:
-                group = {
-                    'guid': str(uuid.UUID(bytes=entry.objectGUID.value)),
-                    'cn': entry.cn.value,
-                    'name': entry.name.value
-                }
-                groups.append(group)
-
-        connection.unbind()
-        return users, groups
+def get_users_data_ad(ip,search_base,win_bind_name,win_bind_passwd):
+    server = ldap3.Server('ldap://{}'.format(ip))
+    search_filter_user = "(&(objectClass=person)(sAMAccountName=*)(sn=*))"
+    attrs_user = ['objectGUID', 'userPrincipalName', 'sAMAccountName', 'givenName', 'sn', 'middleName', 'lastLogon', 'memberOf']
+    with ldap3.Connection(server,user=win_bind_name,password=win_bind_passwd) as conn:
+        conn.search(search_base, search_filter_user, attributes=attrs_user)
+        users = []
+        for entry in conn.entries:
+            user = {
+                'guid_user': str(entry.objectGUID),
+                'upn': entry.userPrincipalName.value,
+                'username': entry.sAMAccountName.value,
+                'first_name': entry.givenName.value,
+                'last_name': entry.sn.value,
+                'middle_name': entry.middleName.value,
+                'last_logon': str(entry.lastLogon),
+                'member_of': entry.memberOf.value
+            }
+            users.append(user)
+        return users
 
 
-def insert_db(users, groups):
-    conn = psycopg2.connect(dbname=DB_HOST, host=DB_HOST, user="DB_USER",
+
+def get_groups_data_ad(ip,search_base,win_bind_name,win_bind_passwd):
+    server = ldap3.Server('ldap://{}'.format(ip))
+    search_filter_group = "(&(objectClass=group)(sAMAccountName=*)(cn=*))"
+    attrs_group = ['objectGUID','cn','name', 'distinguishedName']
+    with ldap3.Connection(server,user=win_bind_name,password=win_bind_passwd) as conn:
+        conn.search(search_base, search_filter_group, attributes=attrs_group)
+        groups = []
+        for entry in conn.entries:
+            group = {
+                'guid_group': str(entry.objectGUID),
+                'cn': entry.cn.value,
+                'group_name': entry.name.value,
+                'distinguished_name': entry.distinguishedName.value
+            }
+            groups.append(group)
+        return groups
+
+def insert_db(users, groups, DB_NAME, DB_HOST, DB_USER, DB_PASSWORD):
+    conn = psycopg2.connect(dbname=DB_NAME, host=DB_HOST, user=DB_USER,
                             password=DB_PASSWORD, port="5433")
     cursor = conn.cursor()
 
-    users_data = f"INSERT INTO {DB_TABLE_1} (guid, upn, username, first_name, last_name, middle_name, last_logon) " \
+    users_data = f"INSERT INTO {DB_TABLE_1} (guid_user, upn, username, first_name, last_name, middle_name, last_logon) " \
                  f"VALUES (%s, %s, %s, %s, %s, %s, %s) " \
-                 f"ON CONFLICT (guid) DO UPDATE " \
+                 f"ON CONFLICT (guid_user) DO UPDATE " \
                  f"SET upn=excluded.upn, username=excluded.username, first_name=excluded.first_name, " \
                  f"last_name=excluded.last_name, middle_name=excluded.middle_name, last_logon=excluded.last_logon"
     for user in users:
         values = (
-            user['guid'],
+            user['guid_user'],
             user['upn'],
             user['username'],
             user['first_name'],
@@ -75,25 +80,28 @@ def insert_db(users, groups):
         )
         cursor.execute(users_data, values)
 
-        group_data = f"INSERT INTO {DB_TABLE_2} (guid, cn, group_name) VALUES " \
-                     f"(%s, %s, %s) ON CONFLICT (guid) " \
-                     f"DO UPDATE SET cn=excluded.cn, name=excluded.name"
+        group_data = f"INSERT INTO {DB_TABLE_2} (guid_group, cn, group_name) VALUES " \
+                     f"(%s, %s, %s) ON CONFLICT (guid_group) " \
+                     f"DO UPDATE SET cn=excluded.cn, group_name=excluded.group_name"
     for group in groups:
         values = (
-            group['guid'],
+            group['guid_group'],
             group['cn'],
-            group['name']
+            group['group_name']
         )
         cursor.execute(group_data, values)
 
-        useringroup_data = f"INSERT INTO {DB_TABLE_3} (guid, username, group_name) " \
-                           f"VALUES (%s, %s, %s) ON CONFLICT (guid, group_name) DO NOTHING"
+    usersingroups_data = f"INSERT INTO {DB_TABLE_3} (user_guid, group_guid) " \
+                           f"VALUES (%s, %s) ON CONFLICT (user_guid, group_guid) DO NOTHING"
     for user in users:
-        for group in user['groups']:
-            cursor.execute(useringroup_data, (user['guid'], user['username'], group))
+        for group in groups:
+            if user['member_of'] == group['distinguished_name']:
+                cursor.execute(usersingroups_data, (user['guid_user'], group['guid_group']))
 
     conn.commit()
     conn.close()
 
-ad_users, ad_groups = get_data_ad()
-insert_db(ad_users, ad_groups)
+
+ad_users = get_users_data_ad(AD_IP, AD_BASE_DN, AD_USER, AD_PASSWORD)
+ad_groups = get_groups_data_ad(AD_IP, AD_BASE_DN, AD_USER, AD_PASSWORD)
+insert_db(ad_users, ad_groups, DB_NAME, DB_HOST, DB_USER, DB_PASSWORD)
