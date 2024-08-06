@@ -17,7 +17,7 @@ DB_TABLE_3 = "usersingroups_ad"
 
 def get_users_data_ad(ip,search_base,win_bind_name,win_bind_passwd):
     server = ldap3.Server('ldap://{}'.format(ip))
-    search_filter_user = "(&(objectClass=person)(sAMAccountName=*)(sn=*))"
+    search_filter_user = "(&(objectClass=person)(sAMAccountName=*))"
     attrs_user = ['objectGUID', 'userPrincipalName', 'sAMAccountName', 'givenName', 'sn', 'middleName', 'lastLogon', 'memberOf']
     with ldap3.Connection(server,user=win_bind_name,password=win_bind_passwd) as conn:
         conn.search(search_base, search_filter_user, attributes=attrs_user)
@@ -31,7 +31,7 @@ def get_users_data_ad(ip,search_base,win_bind_name,win_bind_passwd):
                 'last_name': entry.sn.value,
                 'middle_name': entry.middleName.value,
                 'last_logon': str(entry.lastLogon),
-                'member_of': entry.memberOf.value
+                'member_of': tuple(entry.memberOf)
             }
             users.append(user)
         return users
@@ -50,7 +50,7 @@ def get_groups_data_ad(ip,search_base,win_bind_name,win_bind_passwd):
                 'guid_group': str(entry.objectGUID),
                 'cn': entry.cn.value,
                 'group_name': entry.name.value,
-                'distinguished_name': entry.distinguishedName.value
+                'distinguished_name': str(entry.distinguishedName)
             }
             groups.append(group)
         return groups
@@ -88,12 +88,18 @@ def insert_db(users, groups, DB_NAME, DB_HOST, DB_USER, DB_PASSWORD):
         )
         cursor.execute(group_data, values)
 
-    usersingroups_data = f"INSERT INTO {DB_TABLE_3} (user_guid, group_guid) " \
-                           f"VALUES (%s, %s) ON CONFLICT (user_guid, group_guid) DO NOTHING"
+    usersingroups_data = f"INSERT INTO {DB_TABLE_3} (user_guid, group_guid, user_name, group_name) " \
+                           f"VALUES (%s, %s, %s, %s) ON CONFLICT (user_guid, group_guid) DO UPDATE" \
+                         f" SET user_name=excluded.user_name, group_name=excluded.group_name"
     for user in users:
-        for group in groups:
-            if user['member_of'] == group['distinguished_name']:
-                cursor.execute(usersingroups_data, (user['guid_user'], group['guid_group']))
+        gr_us = tuple(user['member_of'])
+        for grN in gr_us:
+            for group in groups:
+                if grN == group['distinguished_name']:
+                    cursor.execute(usersingroups_data, (user['guid_user'], group['guid_group'], user['username'],
+                                   group['group_name']))
+                else:
+                    continue
 
     conn.commit()
     conn.close()
