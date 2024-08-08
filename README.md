@@ -69,7 +69,7 @@ create database database_ad;
 Создаем таблицы Users, Groups, UsersInGroups
 
 ```
-CREATE TABLE Users (
+CREATE TABLE users_ad (
     guid_user UUID PRIMARY KEY,
     upn VARCHAR(255),
     username VARCHAR(255),
@@ -79,7 +79,7 @@ CREATE TABLE Users (
     last_logon TIMESTAMP
 );
 
-CREATE TABLE Groups (
+CREATE TABLE groups_ad (
     guid_group UUID PRIMARY KEY,
     cn VARCHAR(255),
     group_name VARCHAR(255)
@@ -88,6 +88,8 @@ CREATE TABLE Groups (
 CREATE TABLE usersingroups_ad (
     user_guid UUID,
     group_guid UUID,
+    username VARCHAR(255),
+    group_name VARCHAR(255),
     PRIMARY KEY (user_guid, group_guid),
     FOREIGN KEY (user_guid) REFERENCES users_ad(guid_user),
     FOREIGN KEY (group_guid) REFERENCES groups_ad(guid_group)
